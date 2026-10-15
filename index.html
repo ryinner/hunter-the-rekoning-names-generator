@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Генератор имён — Рэкита де Жос</title>
+<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0a0b;
+    --panel: #161114;
+    --border: #3a2f33;
+    --blood: #8b0000;
+    --blood-bright: #b31212;
+    --text: #cfc3b8;
+    --muted: #7a6f6a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    background-image: radial-gradient(ellipse at top, rgba(139,0,0,0.08), transparent 60%);
+    color: var(--text);
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+
+  .container { width: 100%; max-width: 720px; }
+
+  h1 {
+    font-family: 'Pirata One', cursive;
+    font-size: 2.4rem;
+    color: var(--blood-bright);
+    text-align: center;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(139,0,0,0.6);
+  }
+
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 32px;
+    font-size: 1.05rem;
+  }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .panel h2 {
+    font-family: 'Pirata One', cursive;
+    font-size: 1.4rem;
+    color: var(--blood-bright);
+    font-weight: normal;
+    margin-bottom: 12px;
+  }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+  }
+
+  select,
+  button,
+  input[type="file"] {
+    font-family: inherit;
+    font-size: 1rem;
+    padding: 10px 18px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: #211a1e;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  input[type="file"] {
+    flex: 1;
+    min-width: 220px;
+    color: var(--muted);
+    padding: 8px 12px;
+  }
+
+  button.primary {
+    background: var(--blood);
+    border-color: var(--blood-bright);
+    color: #f0e6e6;
+  }
+
+  button:hover { transform: translateY(-1px); filter: brightness(1.2); }
+  button:active { transform: translateY(0); }
+
+  .result {
+    text-align: center;
+    margin-top: 24px;
+    min-height: 60px;
+  }
+
+  .result .name {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #e8dcd0;
+  }
+
+  .result .gender-tag {
+    display: inline-block;
+    font-size: 0.75rem;
+    padding: 2px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  .dictionary-count {
+    text-align: center;
+    color: var(--muted);
+    margin-top: 16px;
+    font-size: 0.95rem;
+  }
+
+  .saved-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .saved-header h2 { margin-bottom: 0; }
+
+  .count {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+
+  ul { list-style: none; }
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(58,47,51,0.5);
+    font-size: 1.1rem;
+  }
+
+  li .badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  li .badge.male { border-color: #3d5a80; color: #7fa6c9; }
+  li .badge.female { border-color: #803d5a; color: #c97fa6; }
+
+  li .delete {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 1.2rem;
+    padding: 0 8px;
+    cursor: pointer;
+  }
+
+  li .delete:hover { color: var(--blood-bright); transform: none; }
+
+  .actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  .actions button { font-size: 0.85rem; padding: 6px 14px; }
+
+  .empty {
+    color: var(--muted);
+    font-style: italic;
+    text-align: center;
+    padding: 16px;
+  }
+
+  .hint {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin-bottom: 16px;
+    line-height: 1.45;
+  }
+
+  .status {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Журнал деревни Рэкита де Жос</h1>
+  <p class="subtitle">Генератор имён жителей. Сохранённые — те, кого ты уже раздал игрокам.</p>
+
+  <div class="panel">
+    <div class="controls">
+      <select id="gender">
+        <option value="female">Женское</option>
+        <option value="male">Мужское</option>
+        <option value="any">Случайный пол</option>
+      </select>
+      <button id="generateBtn" class="primary">Сгенерировать</button>
+      <button id="saveBtn">Сохранить</button>
+    </div>
+
+    <div class="result" id="result">
+      <div class="empty">Нажми «Сгенерировать», чтобы узнать имя жителя.</div>
+    </div>
+
+    <div class="dictionary-count" id="dictionaryCount"></div>
+  </div>
+
+  <div class="panel">
+    <div class="saved-header">
+      <h2>Уже использованные имена</h2>
+      <span class="count" id="count">0</span>
+    </div>
+
+    <ul id="savedList"></ul>
+
+    <div class="actions">
+      <button id="exportBtn">Экспорт в .txt</button>
+      <button id="clearBtn">Очистить всё</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Импорт из .txt</h2>
+    <p class="hint">
+      Для словарей: каждая строка — имя. Строки с <b>#</b> игнорируются.<br>
+      Префиксы <b>[М]</b> и <b>[Ж]</b> допустимы, но при импорте в словарь игнорируются.<br>
+      Для списка использованных лучше формат: <b>[М] Имя Фамилия</b> или <b>[Ж] Имя Фамилия</b>.<br>
+      Если префикса нет, будет использован выбранный выше пол.
+    </p>
+
+    <div class="controls">
+      <select id="importTarget">
+        <option value="female">Импорт в женский словарь</option>
+        <option value="male">Импорт в мужской словарь</option>
+        <option value="saved">Импорт в список использованных</option>
+      </select>
+
+      <input type="file" id="importFile" accept=".txt,text/plain">
+      <button id="importBtn" class="primary">Импортировать</button>
+      <button id="resetCustomBtn">Сбросить добавленные слова</button>
+    </div>
+
+    <div id="importStatus" class="status"></div>
+  </div>
+</div>
+
+<script>
+  const baseFemaleNames = [
+    "Мария Лупу", "Елена Урсу", "Ана Корбу", "Иляна Варга", "Виорика Мэчелару",
+    "Флорика Фьерару", "Луминица Олару", "Родика Лемнару", "Миоара Чобану", "Доина Дрэган",
+    "Екатерина Оанча", "Маргарета Фаркаш", "Стела Орос", "Санда Мурешан", "Василика Молдован",
+    "Джорджета Рус", "Констанца Попа", "Флоаря Диакону", "Домника Кэлугэру", "Руксандэ Пэсториу",
+    "Илинца Джунгиетору", "Симона Спинтекату", "Кармен Осою", "Даниела Сынжера", "Габриела Вьерму",
+    "Мариана Шарпе", "Николета Пеля", "Валентина Мэрунта", "Алина Гроапа", "Кристина Мормынту",
+    "Оана Стригату", "Михаела Муту", "Адина Орибилу", "Камелия Дифому", "Делия Киору",
+    "Лоредана Шкиопу", "Рамона Сурду", "Сорина Небуну", "Теодора Бециву", "Виолета Сэраку",
+    "Анка Бэтрыну", "Бьянка Тынэрул", "Корина Фрумосу", "Диана Урыту", "Феличия Негру",
+    "Джина Албу", "Ирина Рошу", "Лаура Галбен", "Моника Вэнэт", "Паула Пэтат",
+    "Аделина Кожокару", "Брандуша Фрунза", "Катрина Пэмынт", "Домника Негурэ", "Эльвира Спынз",
+    "Флорина Олог", "Гета Бэлцата", "Хортезия Гярэ", "Юстина Вэпае", "Жени Скрымбэ",
+    "Каталина Варга", "Лэкэмиоара Плынс", "Магда Фум", "Никулина Жилавэ", "Олимпия Бубэ",
+    "Параскива Рые", "Роксана Здрянце", "Стела Пустю", "Тудора Млаштина", "Урсулина Мучегай",
+    "Виорика Колц", "Ксения Згэриетурэ", "Зенобия Цэруш", "Агрипина Салбэ", "Бландузия Фынтына",
+    "Кэтинка Мэчел", "Деспина Вэдува", "Еуфросина Мэтасе", "Филофтея Пэкат", "Георгица Ланц",
+    "Хризанта Фьере", "Иляна Колцун", "Йоица Желеу", "Ливия Ченушэ", "Мелания Чумэ",
+    "Наталия Пырыу", "Отилия Вьерме", "Профира Кэрбуне", "Рада Вэтэмарэ", "Смаранда Мэтэсар",
+    "Теофила Пьеле", "Ванда Пырлог", "Зараза Куцит", "Антонета Фэинэ", "Беатриче Чяцэ",
+    "Корнелия Гропар", "Делия Хойт", "Эмилия Оасе", "Феличия Праф", "Габриела Руджинэ"
+  ];
+
+  const baseMaleNames = [
+    "Ион Лупу", "Василе Урсу", "Георге Корбу", "Раду Варга", "Мирча Мэчелару",
+    "Штефан Фьерару", "Константин Олару", "Думитру Лемнару", "Николае Чобану", "Александру Дрэган",
+    "Михай Оанча", "Андрей Фаркаш", "Петру Орос", "Павел Мурешан", "Тома Молдован",
+    "Лука Рус", "Драгош Попа", "Влад Диакону", "Богдан Кэлугэру", "Костел Пэсториу",
+    "Мариан Джунгиетору", "Даниел Спинтекату", "Габриел Осою", "Валентин Сынжера", "Алин Вьерму",
+    "Кристиан Шарпе", "Овидиу Пеля", "Михэицэ Мэрунта", "Ади Гроапа", "Кэлин Мормынту",
+    "Дорел Стригату", "Гелу Муту", "Ионицэ Орибилу", "Нелу Дифому", "Релу Киору",
+    "Санду Шкиопу", "Траян Сурду", "Виорел Небуну", "Замфир Бециву", "Аурел Сэраку",
+    "Дорин Бэтрыну", "Эмил Тынэрул", "Флорин Фрумосу", "Георгицэ Урыту", "Илие Негру",
+    "Ионел Албу", "Лауренциу Рошу", "Мариус Галбен", "Октавиан Вэнэт", "Сорин Пэтат",
+    "Апостол Цэруш", "Барбу Бэлигар", "Чезар Мэчелар", "Дину Хойт", "Эмилиан Вьерме",
+    "Флорин Пьеле", "Гелу Фум", "Хараламбие Пэмынт", "Илие Олог", "Янку Мучегай",
+    "Янош Фекете", "Костел Негурэ", "Лауренциу Згэриетурэ", "Марин Бэлцат", "Некулай Спынз",
+    "Олимпиу Вэпае", "Петрикэ Пустю", "Раду Млаштина", "Санду Колц", "Тибериу Руджинэ",
+    "Василе Гярэ", "Захария Плынс", "Адам Жилав", "Богдан Вэдув", "Чиприан Пэкат",
+    "Драгош Ланц", "Эуджен Фьере", "Фабиан Ченушэ", "Георге Чумэ", "Хория Пырыу",
+    "Юстин Кэрбуне", "Ливиу Вэтэмарэ", "Матей Пырлог", "Нику Куцит", "Овидиу Фэинэ",
+    "Паул Чяцэ", "Ремус Гропар", "Сорин Оасе", "Тудор Праф", "Валентин Бубэ",
+    "Валериу Рые", "Виктор Здрянце", "Ксенофонт Скрымбэ", "Ионуц Згудуе", "Кэтэлин Мэтрэгунэ",
+    "Дан Спынзурэтоаре", "Эдуард Сынжериу", "Франчишк Отравэ", "Григоре Лэпэдат", "Хоря Тэетурэ"
+  ];
+
+  const STORAGE_KEY = "village_used_names";
+  const CUSTOM_FEMALE_KEY = "village_custom_female_names";
+  const CUSTOM_MALE_KEY = "village_custom_male_names";
+
+  const genderSelect = document.getElementById("gender");
+  const generateBtn = document.getElementById("generateBtn");
+  const saveBtn = document.getElementById("saveBtn");
+  const resultEl = document.getElementById("result");
+  const savedListEl = document.getElementById("savedList");
+  const countEl = document.getElementById("count");
+  const exportBtn = document.getElementById("exportBtn");
+  const clearBtn = document.getElementById("clearBtn");
+  const dictionaryCountEl = document.getElementById("dictionaryCount");
+
+  const importTarget = document.getElementById("importTarget");
+  const importFile = document.getElementById("importFile");
+  const importBtn = document.getElementById("importBtn");
+  const resetCustomBtn = document.getElementById("resetCustomBtn");
+  const importStatus = document.getElementById("importStatus");
+
+  let femaleNames = [];
+  let maleNames = [];
+  let currentName = null;
+
+  function getJSON(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw === null ? fallback : JSON.parse(raw);
+    } catch {
+      return fallback;
+    }
+  }
+
+  function getArray(key) {
+    const value = getJSON(key, []);
+    return Array.isArray(value) ? value : [];
+  }
+
+  function setJSON(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+  function normalize(value) {
+    return String(value || "").replace(/\s+/g, " ").trim();
+  }
+
+  function canonical(value) {
+    return normalize(value).toLowerCase();
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (ch) => {
+      return {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      }[ch];
+    });
+  }
+
+  function mergeNames(base, custom) {
+    const seen = new Set();
+    const result = [];
+
+    for (const item of [...base, ...custom]) {
+      const name = normalize(item);
+      if (!name) continue;
+
+      const key = canonical(name);
+      if (seen.has(key)) continue;
+
+      seen.add(key);
+      result.push(name);
+    }
+
+    return result;
+  }
+
+  function refreshPools() {
+    const customFemale = getArray(CUSTOM_FEMALE_KEY);
+    const customMale = getArray(CUSTOM_MALE_KEY);
+
+    femaleNames = mergeNames(baseFemaleNames, customFemale);
+    maleNames = mergeNames(baseMaleNames, customMale);
+
+    dictionaryCountEl.textContent =
+      `В словаре: женских — ${femaleNames.length}, мужских — ${maleNames.length}`;
+  }
+
+  function getSaved() {
+    return getArray(STORAGE_KEY);
+  }
+
+  function setSaved(list) {
+    setJSON(STORAGE_KEY, list);
+  }
+
+  function generate() {
+    let gender = genderSelect.value;
+
+    if (gender === "any") {
+      gender = Math.random() < 0.5 ? "male" : "female";
+    }
+
+    const pool = gender === "male" ? maleNames : femaleNames;
+
+    if (!pool.length) {
+      resultEl.innerHTML = '<div class="empty">Словарь пуст.</div>';
+      currentName = null;
+      return;
+    }
+
+    const name = pool[Math.floor(Math.random() * pool.length)];
+    currentName = { name, gender };
+
+    resultEl.innerHTML = `
+      <div class="name">${escapeHtml(name)}</div>
+      <span class="gender-tag">${gender === "male" ? "Мужское" : "Женское"}</span>
+    `;
+  }
+
+  function save() {
+    if (!currentName) {
+      generate();
+      return;
+    }
+
+    const saved = getSaved();
+
+    if (saved.some((item) => canonical(item.name) === canonical(currentName.name))) {
+      alert("Это имя уже сохранено в списке.");
+      return;
+    }
+
+    saved.unshift(currentName);
+    setSaved(saved);
+    renderSaved();
+  }
+
+  function renderSaved() {
+    const saved = getSaved();
+    countEl.textContent = saved.length;
+
+    if (!saved.length) {
+      savedListEl.innerHTML = '<li class="empty">Список пуст. Сохрани первое имя.</li>';
+      return;
+    }
+
+    savedListEl.innerHTML = saved.map((item, index) => {
+      const badge = item.gender === "male" ? "М" : "Ж";
+
+      return `
+        <li>
+          <span class="badge ${item.gender}">${badge}</span>
+          <span>${escapeHtml(item.name)}</span>
+          <button class="delete" data-index="${index}" title="Удалить">×</button>
+        </li>
+      `;
+    }).join("");
+  }
+
+  function exportList() {
+    const saved = getSaved();
+    if (!saved.length) return;
+
+    const text = saved
+      .map((item) => `[${item.gender === "male" ? "М" : "Ж"}] ${item.name}`)
+      .join("\n");
+
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "used-names.txt";
+    a.click();
+
+    URL.revokeObjectURL(url);
+  }
+
+  function clearAll() {
+    if (!confirm("Точно очистить весь список использованных имён?")) return;
+
+    setSaved([]);
+    renderSaved();
+  }
+
+  function setStatus(message, isError = false) {
+    importStatus.textContent = message;
+    importStatus.style.color = isError ? "#d98c8c" : "var(--muted)";
+  }
+
+  function parseLine(line) {
+    const clean = normalize(line);
+
+    if (!clean) return null;
+    if (clean.startsWith("#")) return null;
+    if (clean.startsWith(";")) return null;
+
+    const match = clean.match(/^\[(М|Ж|м|ж)\]\s*(.+)$/);
+
+    if (match) {
+      return {
+        gender: match[1].toUpperCase() === "М" ? "male" : "female",
+        name: normalize(match[2])
+      };
+    }
+
+    return {
+      gender: null,
+      name: clean
+    };
+  }
+
+  async function readFileAsText(file) {
+    if (typeof file.text === "function") {
+      return await file.text();
+    }
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+
+      reader.readAsText(file, "utf-8");
+    });
+  }
+
+  async function handleImport() {
+    const file = importFile.files[0];
+
+    if (!file) {
+      setStatus("Сначала выбери .txt файл.", true);
+      return;
+    }
+
+    let text;
+
+    try {
+      text = await readFileAsText(file);
+      text = text.replace(/^\uFEFF/, "");
+    } catch {
+      setStatus("Не удалось прочитать файл.", true);
+      return;
+    }
+
+    const parsedLines = text
+      .split(/\r?\n/)
+      .map(parseLine)
+      .filter(Boolean);
+
+    if (!parsedLines.length) {
+      setStatus("В файле нет подходящих строк.", true);
+      return;
+    }
+
+    const target = importTarget.value;
+
+    if (target === "saved") {
+      const saved = getSaved();
+      const existing = new Set(saved.map((item) => canonical(item.name)));
+      const additions = [];
+
+      let skipped = 0;
+
+      for (const parsed of parsedLines) {
+        let gender = parsed.gender;
+
+        if (!gender) {
+          const selected = genderSelect.value;
+          gender = selected === "any" ? "female" : selected;
+        }
+
+        const name = normalize(parsed.name);
+
+        if (!name || existing.has(canonical(name))) {
+          skipped++;
+          continue;
+        }
+
+        existing.add(canonical(name));
+        additions.push({ name, gender });
+      }
+
+      if (additions.length) {
+        setSaved([...additions, ...saved]);
+        renderSaved();
+      }
+
+      setStatus(`Импортировано: ${additions.length}, пропущено: ${skipped}.`);
+    } else {
+      const customKey = target === "female" ? CUSTOM_FEMALE_KEY : CUSTOM_MALE_KEY;
+      const base = target === "female" ? baseFemaleNames : baseMaleNames;
+
+      const currentCustom = getArray(customKey);
+      const currentPool = mergeNames(base, currentCustom);
+      const seen = new Set(currentPool.map(canonical));
+
+      const added = [];
+      let skipped = 0;
+
+      for (const parsed of parsedLines) {
+        const name = normalize(parsed.name);
+
+        if (!name || seen.has(canonical(name))) {
+          skipped++;
+          continue;
+        }
+
+        seen.add(canonical(name));
+        added.push(name);
+      }
+
+      if (added.length) {
+        const baseSet = new Set(base.map(canonical));
+
+        const updatedCustom = mergeNames([], [...currentCustom, ...added])
+          .filter((name) => !baseSet.has(canonical(name)));
+
+        setJSON(customKey, updatedCustom);
+        refreshPools();
+      }
+
+      setStatus(`Импортировано: ${added.length}, пропущено: ${skipped}.`);
+    }
+
+    importFile.value = "";
+  }
+
+  resetCustomBtn.addEventListener("click", () => {
+    if (!confirm("Удалить все импортированные дополнения словарей? Базовые имена останутся.")) return;
+
+    localStorage.removeItem(CUSTOM_FEMALE_KEY);
+    localStorage.removeItem(CUSTOM_MALE_KEY);
+
+    refreshPools();
+    setStatus("Добавленные слова сброшены.");
+  });
+
+  generateBtn.addEventListener("click", generate);
+  saveBtn.addEventListener("click", save);
+  exportBtn.addEventListener("click", exportList);
+  clearBtn.addEventListener("click", clearAll);
+  importBtn.addEventListener("click", handleImport);
+
+  savedListEl.addEventListener("click", (e) => {
+    if (!e.target.classList.contains("delete")) return;
+
+    const index = Number(e.target.dataset.index);
+    const saved = getSaved();
+
+    saved.splice(index, 1);
+    setSaved(saved);
+    renderSaved();
+  });
+
+  refreshPools();
+  renderSaved();
+</script>
+</body>
+</html>
